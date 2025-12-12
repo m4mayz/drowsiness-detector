@@ -30,10 +30,6 @@ export default function Detector({ onStop }: DetectorProps) {
     const [isDrowsy, setIsDrowsy] = useState(false);
     const [showPopup, setShowPopup] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [canvasDimensions, setCanvasDimensions] = useState({
-        width: 1280,
-        height: 720,
-    });
 
     // Audio Ref
     const alarmRef = useRef<HTMLAudioElement | null>(null);
@@ -48,17 +44,6 @@ export default function Detector({ onStop }: DetectorProps) {
         // Setup Audio
         alarmRef.current = new Audio("/alarm.mp3");
         alarmRef.current.loop = true;
-
-        // Set canvas dimensions based on screen size
-        const updateDimensions = () => {
-            setCanvasDimensions({
-                width: window.innerWidth,
-                height: window.innerHeight,
-            });
-        };
-
-        updateDimensions();
-        window.addEventListener("resize", updateDimensions);
 
         // Check if MediaPipe is already loaded (for remount cases)
         const checkMediaPipeLoaded = () => {
@@ -89,7 +74,6 @@ export default function Detector({ onStop }: DetectorProps) {
             if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
             }
-            window.removeEventListener("resize", updateDimensions);
         };
     }, []);
 
@@ -195,8 +179,8 @@ export default function Detector({ onStop }: DetectorProps) {
                     if (videoRef.current)
                         await faceMesh.send({ image: videoRef.current });
                 },
-                width: window.innerWidth,
-                height: window.innerHeight,
+                width: 1280,
+                height: 720,
             });
             cameraRef.current = camera;
         }
@@ -342,8 +326,8 @@ export default function Detector({ onStop }: DetectorProps) {
                 <canvas
                     ref={canvasRef}
                     className="absolute top-0 left-0 w-full h-full object-contain transform -scale-x-100"
-                    width={canvasDimensions.width}
-                    height={canvasDimensions.height}
+                    width={1280}
+                    height={720}
                 />
 
                 {/* Drowsiness Alert Overlay */}
