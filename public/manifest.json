@@ -1,8 +1,8 @@
 {
-    "name": "DriverGuard AI",
-    "short_name": "DriverGuard",
-    "theme_color": "#000000",
-    "background_color": "#000000",
+    "name": "Driver Drowsiness Detection System",
+    "short_name": "Drowsiness Detector",
+    "theme_color": "#0f172a",
+    "background_color": "#0f172a",
     "display": "standalone",
     "orientation": "portrait",
     "scope": "/",
