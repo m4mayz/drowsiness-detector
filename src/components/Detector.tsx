@@ -34,15 +34,14 @@ export default function Detector({ onStop }: DetectorProps) {
         width: 720,
         height: 1280,
     });
-    const [earThreshold, setEarThreshold] = useState(0.2);
-    const [showSettings, setShowSettings] = useState(false);
 
     // Audio Ref
     const alarmRef = useRef<HTMLAudioElement | null>(null);
 
     // Logic Refs
     const closedFrameCounter = useRef(0);
-    const cameraRef = useRef<any>(null);
+    const cameraRef = useRef<any>(null); // Simpan instance camera
+    const EAR_THRESHOLD = 0.1;
     const FRAMES_TO_ALARM = 15;
 
     useEffect(() => {
@@ -149,7 +148,7 @@ export default function Detector({ onStop }: DetectorProps) {
                 const avgEAR = (leftEAR + rightEAR) / 2;
 
                 // --- MAIN LOGIC ---
-                if (avgEAR < earThreshold) {
+                if (avgEAR < EAR_THRESHOLD) {
                     closedFrameCounter.current += 1;
                     setStatus(`Eyes Closed (${closedFrameCounter.current})`);
 
@@ -364,123 +363,27 @@ export default function Detector({ onStop }: DetectorProps) {
                 {!showPopup && (
                     <div className="absolute top-0 left-0 right-0 p-4">
                         <div className="bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-lg rounded-2xl px-6 py-5 border border-white/10 shadow-2xl">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    {!isDrowsy ? (
-                                        <div className="flex items-center justify-center w-3 h-3">
-                                            <span className="absolute w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
-                                            <span className="relative w-3 h-3 bg-green-500 rounded-full"></span>
-                                        </div>
-                                    ) : (
-                                        <div className="flex items-center justify-center w-3 h-3">
-                                            <span className="absolute w-3 h-3 bg-red-400 rounded-full animate-ping"></span>
-                                            <span className="relative w-3 h-3 bg-red-500 rounded-full"></span>
-                                        </div>
-                                    )}
-                                    <h2
-                                        className={`font-poppins text-xl md:text-2xl font-bold text-center ${
-                                            isDrowsy
-                                                ? "text-red-400"
-                                                : "text-green-400"
-                                        }`}
-                                    >
-                                        {status}
-                                    </h2>
-                                </div>
-                                <button
-                                    onClick={() =>
-                                        setShowSettings(!showSettings)
-                                    }
-                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors font-poppins text-white underline"
+                            <div className="flex items-center justify-center gap-3">
+                                {!isDrowsy ? (
+                                    <div className="flex items-center justify-center w-3 h-3">
+                                        <span className="absolute w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
+                                        <span className="relative w-3 h-3 bg-green-500 rounded-full"></span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center w-3 h-3">
+                                        <span className="absolute w-3 h-3 bg-red-400 rounded-full animate-ping"></span>
+                                        <span className="relative w-3 h-3 bg-red-500 rounded-full"></span>
+                                    </div>
+                                )}
+                                <h2
+                                    className={`font-poppins text-xl md:text-2xl font-bold text-center ${
+                                        isDrowsy
+                                            ? "text-red-400"
+                                            : "text-green-400"
+                                    }`}
                                 >
-                                    Settings
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Settings Panel */}
-                {!showPopup && showSettings && (
-                    <div className="absolute top-20 left-4 right-4">
-                        <div className="bg-gradient-to-br from-slate-900/95 to-slate-800/95 backdrop-blur-xl rounded-2xl p-6 border border-white/10 shadow-2xl">
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-poppins text-lg font-bold text-white">
-                                    Sensitivity Settings
-                                </h3>
-                                <button
-                                    onClick={() => setShowSettings(false)}
-                                    className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-                                >
-                                    <svg
-                                        className="w-5 h-5 text-white"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M6 18L18 6M6 6l12 12"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-
-                            <div className="mb-3">
-                                <div className="flex justify-between items-center mb-2">
-                                    <label className="text-sm text-gray-300">
-                                        Detection Threshold
-                                    </label>
-                                    <span className="text-sm font-bold text-purple-400">
-                                        {earThreshold.toFixed(2)}
-                                    </span>
-                                </div>
-                                <input
-                                    type="range"
-                                    min="0.10"
-                                    max="1.00"
-                                    step="0.01"
-                                    value={earThreshold}
-                                    onChange={(e) =>
-                                        setEarThreshold(
-                                            parseFloat(e.target.value)
-                                        )
-                                    }
-                                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                                />
-                                <div className="flex justify-between text-xs text-gray-400 mt-1">
-                                    <span>More Sensitive</span>
-                                    <span>Less Sensitive</span>
-                                </div>
-                            </div>
-
-                            <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                                <div className="flex items-start gap-2">
-                                    <svg
-                                        className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                    </svg>
-                                    <p className="text-xs text-blue-300 leading-relaxed">
-                                        <strong>
-                                            If detection is not accurate:
-                                        </strong>{" "}
-                                        Adjust this threshold. Lower values are
-                                        more sensitive (triggers easier), higher
-                                        values are less sensitive (requires more
-                                        closed eyes).
-                                    </p>
-                                </div>
+                                    {status}
+                                </h2>
                             </div>
                         </div>
                     </div>
