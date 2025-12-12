@@ -41,7 +41,7 @@ export default function Detector({ onStop }: DetectorProps) {
     // Logic Refs
     const closedFrameCounter = useRef(0);
     const cameraRef = useRef<any>(null); // Simpan instance camera
-    const EAR_THRESHOLD = 0.25;
+    const EAR_THRESHOLD = 0.2; // Lowered from 0.25 to 0.20 for better portrait detection
     const FRAMES_TO_ALARM = 15;
 
     useEffect(() => {
