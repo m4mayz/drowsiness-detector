@@ -30,6 +30,10 @@ export default function Detector({ onStop }: DetectorProps) {
     const [isDrowsy, setIsDrowsy] = useState(false);
     const [showPopup, setShowPopup] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [canvasDimensions, setCanvasDimensions] = useState({
+        width: 1280,
+        height: 720,
+    });
 
     // Audio Ref
     const alarmRef = useRef<HTMLAudioElement | null>(null);
@@ -45,6 +49,33 @@ export default function Detector({ onStop }: DetectorProps) {
         alarmRef.current = new Audio("/alarm.mp3");
         alarmRef.current.loop = true;
 
+        // Set canvas dimensions based on screen size
+        const updateDimensions = () => {
+            setCanvasDimensions({
+                width: window.innerWidth,
+                height: window.innerHeight,
+            });
+        };
+
+        updateDimensions();
+        window.addEventListener("resize", updateDimensions);
+
+        // Check if MediaPipe is already loaded (for remount cases)
+        const checkMediaPipeLoaded = () => {
+            if (
+                (window as any).FaceMesh &&
+                (window as any).Camera &&
+                (window as any).drawConnectors &&
+                (window as any).FACEMESH_TESSELATION
+            ) {
+                console.log("MediaPipe already loaded, initializing...");
+                initFaceMesh();
+            }
+        };
+
+        // Small delay to ensure DOM is ready
+        setTimeout(checkMediaPipeLoaded, 100);
+
         return () => {
             // Cleanup on unmount
             if (alarmRef.current) {
@@ -58,6 +89,7 @@ export default function Detector({ onStop }: DetectorProps) {
             if (document.fullscreenElement) {
                 document.exitFullscreen().catch(() => {});
             }
+            window.removeEventListener("resize", updateDimensions);
         };
     }, []);
 
@@ -163,8 +195,8 @@ export default function Detector({ onStop }: DetectorProps) {
                     if (videoRef.current)
                         await faceMesh.send({ image: videoRef.current });
                 },
-                width: 640,
-                height: 480,
+                width: window.innerWidth,
+                height: window.innerHeight,
             });
             cameraRef.current = camera;
         }
@@ -310,8 +342,8 @@ export default function Detector({ onStop }: DetectorProps) {
                 <canvas
                     ref={canvasRef}
                     className="absolute top-0 left-0 w-full h-full object-contain transform -scale-x-100"
-                    width={640}
-                    height={480}
+                    width={canvasDimensions.width}
+                    height={canvasDimensions.height}
                 />
 
                 {/* Drowsiness Alert Overlay */}
