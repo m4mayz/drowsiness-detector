@@ -179,8 +179,8 @@ export default function Detector({ onStop }: DetectorProps) {
                     if (videoRef.current)
                         await faceMesh.send({ image: videoRef.current });
                 },
-                width: 1280,
-                height: 720,
+                width: 720,
+                height: 1280,
             });
             cameraRef.current = camera;
         }
@@ -326,8 +326,8 @@ export default function Detector({ onStop }: DetectorProps) {
                 <canvas
                     ref={canvasRef}
                     className="absolute top-0 left-0 w-full h-full object-contain transform -scale-x-100"
-                    width={1280}
-                    height={720}
+                    width={720}
+                    height={1280}
                 />
 
                 {/* Drowsiness Alert Overlay */}
