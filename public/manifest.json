@@ -1,0 +1,22 @@
+{
+    "name": "DriverGuard AI",
+    "short_name": "DriverGuard",
+    "theme_color": "#000000",
+    "background_color": "#000000",
+    "display": "standalone",
+    "orientation": "landscape",
+    "scope": "/",
+    "start_url": "/",
+    "icons": [
+        {
+            "src": "https://cdn-icons-png.freepik.com/512/6723/6723235.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://cdn-icons-png.freepik.com/512/6723/6723235.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
