@@ -30,6 +30,10 @@ export default function Detector({ onStop }: DetectorProps) {
     const [isDrowsy, setIsDrowsy] = useState(false);
     const [showPopup, setShowPopup] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [videoDimensions, setVideoDimensions] = useState({
+        width: 720,
+        height: 1280,
+    });
 
     // Audio Ref
     const alarmRef = useRef<HTMLAudioElement | null>(null);
@@ -174,14 +178,24 @@ export default function Detector({ onStop }: DetectorProps) {
 
         // Setup Kamera
         if (videoRef.current) {
-            const camera = new Camera(videoRef.current, {
+            const video = videoRef.current;
+
+            const camera = new Camera(video, {
                 onFrame: async () => {
                     if (videoRef.current)
                         await faceMesh.send({ image: videoRef.current });
                 },
-                width: 720,
-                height: 1280,
+                facingMode: "user",
             });
+
+            // Listen for video metadata to get actual resolution
+            video.addEventListener("loadedmetadata", () => {
+                const width = video.videoWidth;
+                const height = video.videoHeight;
+                console.log(`Camera resolution: ${width}x${height}`);
+                setVideoDimensions({ width, height });
+            });
+
             cameraRef.current = camera;
         }
     };
@@ -326,8 +340,8 @@ export default function Detector({ onStop }: DetectorProps) {
                 <canvas
                     ref={canvasRef}
                     className="absolute top-0 left-0 w-full h-full object-contain transform -scale-x-100"
-                    width={720}
-                    height={1280}
+                    width={videoDimensions.width}
+                    height={videoDimensions.height}
                 />
 
                 {/* Drowsiness Alert Overlay */}
