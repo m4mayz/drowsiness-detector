@@ -28,7 +28,6 @@ export default function Detector({ onStop }: DetectorProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [status, setStatus] = useState("Loading AI Model...");
     const [isDrowsy, setIsDrowsy] = useState(false);
-    const [isModelLoaded, setIsModelLoaded] = useState(false);
     const [showPopup, setShowPopup] = useState(true);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -168,7 +167,6 @@ export default function Detector({ onStop }: DetectorProps) {
                 height: 480,
             });
             cameraRef.current = camera;
-            setIsModelLoaded(true);
         }
     };
 
@@ -279,65 +277,39 @@ export default function Detector({ onStop }: DetectorProps) {
 
                         <button
                             onClick={handleOkClick}
-                            disabled={!isModelLoaded}
-                            className="px-12 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 text-white text-lg font-bold rounded-2xl transition-all w-full shadow-xl hover:shadow-purple-500/50 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                            className="px-12 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white text-lg font-bold rounded-2xl transition-all w-full shadow-xl hover:shadow-purple-500/50 hover:scale-105"
                         >
-                            {isModelLoaded ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <svg
-                                        className="w-5 h-5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M5 13l4 4L19 7"
-                                        />
-                                    </svg>
-                                    OK, Let's Go
-                                </span>
-                            ) : (
-                                <span className="flex items-center justify-center gap-2">
-                                    <svg
-                                        className="animate-spin h-5 w-5"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <circle
-                                            className="opacity-25"
-                                            cx="12"
-                                            cy="12"
-                                            r="10"
-                                            stroke="currentColor"
-                                            strokeWidth="4"
-                                        ></circle>
-                                        <path
-                                            className="opacity-75"
-                                            fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                        ></path>
-                                    </svg>
-                                    Loading AI Model...
-                                </span>
-                            )}
+                            <span className="flex items-center justify-center gap-2">
+                                <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                    />
+                                </svg>
+                                OK, Let's Go
+                            </span>
                         </button>
                     </div>
                 </div>
             )}
 
             {/* Fullscreen Camera View */}
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full bg-black">
                 <video
                     ref={videoRef}
-                    className="absolute top-0 left-0 w-full h-full object-cover transform -scale-x-100 opacity-0"
+                    className="absolute top-0 left-0 w-full h-full object-contain transform -scale-x-100 opacity-0"
                     playsInline
                 />
                 <canvas
                     ref={canvasRef}
-                    className="absolute top-0 left-0 w-full h-full object-cover transform -scale-x-100"
+                    className="absolute top-0 left-0 w-full h-full object-contain transform -scale-x-100"
                     width={640}
                     height={480}
                 />
