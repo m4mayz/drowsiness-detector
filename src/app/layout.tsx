@@ -1,16 +1,32 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+    subsets: ["latin"],
+    variable: "--font-inter",
+});
+
+const poppins = Poppins({
+    subsets: ["latin"],
+    weight: ["400", "500", "600", "700", "800", "900"],
+    variable: "--font-poppins",
+});
 
 export const metadata: Metadata = {
-    title: "DriverGuard AI",
-    description: "Deteksi kantuk pengemudi berbasis AI Web",
-    manifest: "/manifest.json", // <--- Tambahkan ini
-    themeColor: "#000000", // <--- Tambahkan ini (opsional di Next 14, tapi aman ditaruh)
-    viewport:
-        "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0", // Mencegah zoom cubit
+    title: "Driver Drowsiness Detection",
+    description: "AI-based driver drowsiness detection system",
+    manifest: "/manifest.json",
+    themeColor: "#0f172a",
+    viewport: {
+        width: "device-width",
+        initialScale: 1,
+        maximumScale: 1,
+        userScalable: false,
+    },
+    other: {
+        "screen-orientation": "portrait",
+    },
 };
 
 export default function RootLayout({
@@ -20,7 +36,9 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en">
-            <body className={inter.className}>{children}</body>
+            <body className={`${inter.variable} ${poppins.variable} font-sans`}>
+                {children}
+            </body>
         </html>
     );
 }

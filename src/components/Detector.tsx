@@ -3,28 +3,34 @@
 import React, { useRef, useEffect, useState } from "react";
 import Script from "next/script";
 
-// --- Helper: Hitung EAR (Eye Aspect Ratio) ---
+// --- Helper: Calculate EAR (Eye Aspect Ratio) ---
 const calculateEAR = (landmarks: any, indices: number[]) => {
     const p = (i: number) => landmarks[indices[i]];
     // Euclidean Distance Manual
     const dist = (p1: any, p2: any) =>
         Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 
-    // Jarak Vertikal
+    // Vertical Distance
     const v1 = dist(p(1), p(5));
     const v2 = dist(p(2), p(4));
-    // Jarak Horizontal
+    // Horizontal Distance
     const h = dist(p(0), p(3));
 
     return (v1 + v2) / (2.0 * h);
 };
 
-export default function Detector() {
+interface DetectorProps {
+    onStop: () => void;
+}
+
+export default function Detector({ onStop }: DetectorProps) {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [status, setStatus] = useState("Memuat Model AI...");
+    const [status, setStatus] = useState("Loading AI Model...");
     const [isDrowsy, setIsDrowsy] = useState(false);
     const [isModelLoaded, setIsModelLoaded] = useState(false);
+    const [showPopup, setShowPopup] = useState(true);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     // Audio Ref
     const alarmRef = useRef<HTMLAudioElement | null>(null);
@@ -41,7 +47,7 @@ export default function Detector() {
         alarmRef.current.loop = true;
 
         return () => {
-            // Cleanup saat pindah halaman
+            // Cleanup on unmount
             if (alarmRef.current) {
                 alarmRef.current.pause();
                 alarmRef.current = null;
@@ -49,12 +55,16 @@ export default function Detector() {
             if (cameraRef.current) {
                 cameraRef.current.stop();
             }
+            // Exit fullscreen on cleanup
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
         };
     }, []);
 
-    // Fungsi ini dipanggil setelah Script CDN selesai dimuat
+    // This function is called after CDN Script is loaded
     const initFaceMesh = () => {
-        setStatus("Menunggu Izin Kamera...");
+        setStatus("Waiting for Camera Permission...");
 
         // Akses Global Variable dari CDN
         const FaceMesh = (window as any).FaceMesh;
@@ -118,10 +128,10 @@ export default function Detector() {
                 const rightEAR = calculateEAR(landmarks, RIGHT_EYE);
                 const avgEAR = (leftEAR + rightEAR) / 2;
 
-                // --- LOGIKA UTAMA ---
+                // --- MAIN LOGIC ---
                 if (avgEAR < EAR_THRESHOLD) {
                     closedFrameCounter.current += 1;
-                    setStatus(`Mata Tertutup (${closedFrameCounter.current})`);
+                    setStatus(`Eyes Closed (${closedFrameCounter.current})`);
 
                     if (closedFrameCounter.current > FRAMES_TO_ALARM) {
                         setIsDrowsy(true);
@@ -136,7 +146,7 @@ export default function Detector() {
                 } else {
                     closedFrameCounter.current = 0;
                     setIsDrowsy(false);
-                    setStatus(`Aman - EAR: ${avgEAR.toFixed(2)}`);
+                    setStatus(`Safe - EAR: ${avgEAR.toFixed(2)}`);
 
                     if (alarmRef.current && !alarmRef.current.paused) {
                         alarmRef.current.pause();
@@ -162,7 +172,9 @@ export default function Detector() {
         }
     };
 
-    const handleStart = () => {
+    const handleOkClick = async () => {
+        setShowPopup(false);
+
         // Trik Audio: User interaction trigger
         if (alarmRef.current) {
             alarmRef.current
@@ -174,19 +186,44 @@ export default function Detector() {
                 .catch(() => {});
         }
 
+        // Request fullscreen
+        try {
+            await document.documentElement.requestFullscreen();
+            setIsFullscreen(true);
+        } catch (err) {
+            console.log("Fullscreen request failed", err);
+        }
+
         if (cameraRef.current) {
             cameraRef.current.start();
-            setStatus("Sistem Aktif");
+            setStatus("System Active");
         }
     };
 
+    const handleStop = async () => {
+        // Stop camera
+        if (cameraRef.current) {
+            cameraRef.current.stop();
+        }
+
+        // Stop alarm
+        if (alarmRef.current && !alarmRef.current.paused) {
+            alarmRef.current.pause();
+            alarmRef.current.currentTime = 0;
+        }
+
+        // Exit fullscreen
+        if (document.fullscreenElement) {
+            await document.exitFullscreen().catch(() => {});
+        }
+
+        // Return to home page
+        onStop();
+    };
+
     return (
-        <div
-            className={`flex flex-col items-center justify-center p-4 rounded-xl transition-colors duration-300 ${
-                isDrowsy ? "bg-red-900" : "bg-gray-800"
-            }`}
-        >
-            {/* Load Script CDN secara berurutan */}
+        <div className="fixed inset-0 bg-black">
+            {/* Load Script CDN */}
             <Script
                 src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
                 strategy="lazyOnload"
@@ -208,8 +245,91 @@ export default function Detector() {
                 }}
             />
 
-            {/* Container Video & Canvas */}
-            <div className="relative w-full max-w-[640px] aspect-[4/3] bg-black rounded-lg overflow-hidden border-2 border-gray-600">
+            {/* Instruction Popup */}
+            {showPopup && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-900/95 via-purple-900/95 to-slate-900/95 backdrop-blur-md p-8">
+                    <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 rounded-3xl p-10 max-w-md w-full text-center border-2 border-purple-500/30 shadow-2xl backdrop-blur-xl">
+                        {/* Phone Icon */}
+                        <div className="mb-8 flex justify-center">
+                            <div className="p-6 bg-gradient-to-br from-purple-500/30 to-blue-500/30 rounded-3xl border border-purple-400/50">
+                                <svg
+                                    className="w-20 h-20 text-purple-300"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                    />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <h2 className="font-poppins text-3xl font-bold text-white mb-3">
+                            Setup Instructions
+                        </h2>
+                        <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-blue-500 mx-auto mb-6 rounded-full"></div>
+                        <p className="text-gray-300 mb-10 leading-relaxed text-lg">
+                            Place your phone in portrait mode on the car
+                            dashboard with the camera facing your face.
+                        </p>
+
+                        <button
+                            onClick={handleOkClick}
+                            disabled={!isModelLoaded}
+                            className="px-12 py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 text-white text-lg font-bold rounded-2xl transition-all w-full shadow-xl hover:shadow-purple-500/50 hover:scale-105 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                        >
+                            {isModelLoaded ? (
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg
+                                        className="w-5 h-5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M5 13l4 4L19 7"
+                                        />
+                                    </svg>
+                                    OK, Let's Go
+                                </span>
+                            ) : (
+                                <span className="flex items-center justify-center gap-2">
+                                    <svg
+                                        className="animate-spin h-5 w-5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <circle
+                                            className="opacity-25"
+                                            cx="12"
+                                            cy="12"
+                                            r="10"
+                                            stroke="currentColor"
+                                            strokeWidth="4"
+                                        ></circle>
+                                        <path
+                                            className="opacity-75"
+                                            fill="currentColor"
+                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                        ></path>
+                                    </svg>
+                                    Loading AI Model...
+                                </span>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Fullscreen Camera View */}
+            <div className="relative w-full h-full">
                 <video
                     ref={videoRef}
                     className="absolute top-0 left-0 w-full h-full object-cover transform -scale-x-100 opacity-0"
@@ -222,31 +342,80 @@ export default function Detector() {
                     height={480}
                 />
 
+                {/* Drowsiness Alert Overlay */}
                 {isDrowsy && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-red-500/30 animate-pulse">
-                        <h2 className="text-5xl font-black text-white drop-shadow-lg">
-                            BANGUN!!!
-                        </h2>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-red-600/60 to-orange-600/60 animate-pulse">
+                        <div className="relative">
+                            <div className="absolute inset-0 blur-3xl bg-red-500/50 scale-150"></div>
+                            <h2 className="font-poppins relative text-5xl md:text-7xl font-bold text-white drop-shadow-2xl tracking-wider">
+                                ⚠️ WAKE UP!
+                            </h2>
+                        </div>
+                        <p className="font-poppins mt-4 text-2xl md:text-3xl text-white/90 drop-shadow-lg">
+                            Drowsiness Detected
+                        </p>
                     </div>
                 )}
-            </div>
 
-            <div className="mt-6 text-center">
-                <h2
-                    className={`text-2xl font-bold mb-2 ${
-                        isDrowsy ? "text-red-400" : "text-green-400"
-                    }`}
-                >
-                    {status}
-                </h2>
+                {/* Status Overlay */}
+                {!showPopup && (
+                    <div className="absolute top-0 left-0 right-0 p-4">
+                        <div className="bg-gradient-to-br from-slate-900/80 to-slate-800/80 backdrop-blur-lg rounded-2xl px-6 py-5 border border-white/10 shadow-2xl">
+                            <div className="flex items-center justify-center gap-3">
+                                {!isDrowsy ? (
+                                    <div className="flex items-center justify-center w-3 h-3">
+                                        <span className="absolute w-3 h-3 bg-green-400 rounded-full animate-ping"></span>
+                                        <span className="relative w-3 h-3 bg-green-500 rounded-full"></span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center w-3 h-3">
+                                        <span className="absolute w-3 h-3 bg-red-400 rounded-full animate-ping"></span>
+                                        <span className="relative w-3 h-3 bg-red-500 rounded-full"></span>
+                                    </div>
+                                )}
+                                <h2
+                                    className={`font-poppins text-xl md:text-2xl font-bold text-center ${
+                                        isDrowsy
+                                            ? "text-red-400"
+                                            : "text-green-400"
+                                    }`}
+                                >
+                                    {status}
+                                </h2>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
-                {isModelLoaded && (
-                    <button
-                        onClick={handleStart}
-                        className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-full transition-all"
-                    >
-                        MULAI SISTEM
-                    </button>
+                {/* Stop Button */}
+                {!showPopup && (
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                        <button
+                            onClick={handleStop}
+                            className="group w-full px-8 py-5 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white text-xl font-bold rounded-2xl transition-all shadow-2xl hover:shadow-red-500/50 hover:scale-105 flex items-center justify-center gap-3"
+                        >
+                            <svg
+                                className="w-6 h-6"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"
+                                />
+                            </svg>
+                            <span className="font-poppins">Stop Detection</span>
+                        </button>
+                    </div>
                 )}
             </div>
         </div>
