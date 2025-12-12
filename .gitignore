@@ -10,6 +10,19 @@
 !.yarn/releases
 !.yarn/versions
 
+# PWA files
+**/public/sw.js
+**/public/workbox-*.js
+**/public/worker-*.js
+**/public/precache-manifest-*.js
+**/public/__WB_MANIFEST.js
+**/public/service-worker.js
+**/public/manifest.json
+**/public/manifest-*.json
+**/public/browserconfig.xml
+**/public/site.webmanifest
+
+
 # testing
 /coverage
 
